@@ -32,6 +32,9 @@
       <select name="paidThrough"></select>
       <span class="hint">Escolha o último mês já pago. O painel calcula atraso e próximos vencimentos a partir disso.</span>
     </label>
+    <label class="field">Valor em atraso informado (R$, opcional)<input name="overdueOverride" inputmode="decimal" placeholder="Ex.: 280,00">
+      <span class="hint">Use quando o fornecedor cobra um total diferente da soma das mensalidades em aberto. É limpo ao marcar como pago.</span>
+    </label>
     <label class="field">O que acontece se não pagar<textarea name="risk" rows="3" maxlength="500" placeholder="Ex.: o servidor para e o app sai do ar."></textarea></label>
     <label class="field">Observação (opcional)<input name="note" maxlength="200" placeholder="Ex.: confirmar o total no painel do fornecedor"></label>
     <div class="field">

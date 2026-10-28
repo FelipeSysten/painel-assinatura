@@ -12,7 +12,7 @@ export async function GET(request) {
 export async function PUT(request) {
   const denied = requirePanel(request);
   if (denied) return denied;
-  if (!hasStore()) return json({ error: 'Armazenamento não configurado: conecte o Upstash Redis no projeto da Vercel.' }, 503);
+  if (!hasStore()) return json({ error: 'Armazenamento não configurado: conecte o Neon Postgres no projeto da Vercel.' }, 503);
   const body = await request.json().catch(() => null);
   const next = body && body.state;
   if (!next || !Array.isArray(next.subs) || typeof next.settings !== 'object') return json({ error: 'Dados inválidos.' }, 400);

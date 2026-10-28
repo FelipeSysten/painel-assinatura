@@ -82,12 +82,14 @@ export function analyze(sub, today) {
     const upcomingDue = dueDate(c, sub.dueDay);
     return {
       state: 'late', cycle: next, due, lateDays: -diff, openCycles,
-      overdue: openCycles.length * sub.amount, payThrough: openCycles[openCycles.length - 1],
+      // overdueOverride: total informado pelo fornecedor, quando difere da soma das mensalidades
+      overdue: sub.overdueOverride ?? openCycles.length * sub.amount, overdueManual: sub.overdueOverride != null,
+      toPay: sub.overdueOverride ?? openCycles.length * sub.amount, payThrough: openCycles[openCycles.length - 1],
       upcomingCycle: c, upcomingDue, daysToUpcoming: daysBetween(today, upcomingDue)
     };
   }
   return {
-    state: diff <= 7 ? 'soon' : 'ok', cycle: next, due, diff, openCycles: [], overdue: 0, payThrough: next,
+    state: diff <= 7 ? 'soon' : 'ok', cycle: next, due, diff, openCycles: [], overdue: 0, overdueManual: false, toPay: sub.amount, payThrough: next,
     upcomingCycle: next, upcomingDue: due, daysToUpcoming: diff
   };
 }
@@ -153,10 +155,10 @@ export function applyPayment(state, subId, today, source = 'painel') {
   const sub = state.subs.find((s) => s.id === subId);
   if (!sub) return state;
   const a = analyze(sub, today);
-  const entry = { subId, from: sub.paidThrough, to: a.payThrough, at: new Date().toISOString(), source, amount: sub.amount * Math.max(1, a.openCycles.length) };
+  const entry = { subId, from: sub.paidThrough, fromOverride: sub.overdueOverride ?? null, to: a.payThrough, at: new Date().toISOString(), source, amount: a.toPay };
   return {
     ...state,
-    subs: state.subs.map((s) => (s.id === subId ? { ...s, paidThrough: a.payThrough } : s)),
+    subs: state.subs.map((s) => (s.id === subId ? { ...s, paidThrough: a.payThrough, overdueOverride: null } : s)),
     history: [entry, ...(state.history || [])].slice(0, 200)
   };
 }
@@ -170,7 +172,7 @@ export function undoPayment(state, subId) {
   if (!h) return state;
   const history = [...state.history];
   history.splice(history.indexOf(h), 1);
-  return { ...state, subs: state.subs.map((s) => (s.id === subId ? { ...s, paidThrough: h.from } : s)), history };
+  return { ...state, subs: state.subs.map((s) => (s.id === subId ? { ...s, paidThrough: h.from, overdueOverride: h.fromOverride ?? null } : s)), history };
 }
 
 // ---------- agenda de alertas ----------
@@ -217,6 +219,14 @@ export function alertsDueNow(state, today, slot) {
 
 // ---------- mensagens (usadas pelo cron e pela prévia do painel) ----------
 
+export function overdueNote(a) {
+  const n = a.openCycles.length;
+  const months = `${n} mensalidade${n === 1 ? '' : 's'} em aberto (${a.openCycles.map(fmtCycle).join(', ')})`;
+  return a.overdueManual
+    ? `${months} · valor informado pelo fornecedor: ${fmtBRL(a.overdue)}.`
+    : `${months} · total estimado ${fmtBRL(a.overdue)}. Confirme o valor no painel do fornecedor.`;
+}
+
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 export function buildMessage(sub, today, ctx = {}) {
@@ -225,9 +235,9 @@ export function buildMessage(sub, today, ctx = {}) {
   const panelUrl = ctx.panelUrl || '';
   const qrUrl = ctx.qrUrl || '';
   const late = a.state === 'late';
-  const amountLabel = late && a.openCycles.length > 1
-    ? `${fmtBRL(sub.amount)} por mensalidade · ${a.openCycles.length} em aberto (${fmtBRL(a.overdue)})`
-    : fmtBRL(sub.amount);
+  const amountLabel = !late || (a.openCycles.length === 1 && !a.overdueManual)
+    ? fmtBRL(a.toPay)
+    : `${fmtBRL(a.toPay)} (${a.openCycles.length} mensalidade${a.openCycles.length === 1 ? '' : 's'} em aberto${a.overdueManual ? '' : ', estimado'})`;
   const when = late ? `EM ATRASO` : a.diff === 0 ? 'VENCE HOJE' : a.diff === 1 ? 'VENCE AMANHÃ' : `VENCE EM ${a.diff} DIAS`;
   const title = `${when} · ${sub.name}`;
   const label = sub.what ? `${sub.name} (${sub.what})` : sub.name;
@@ -245,7 +255,7 @@ export function buildMessage(sub, today, ctx = {}) {
   const whatsapp = lines.join('\n');
 
   const subject = late
-    ? `[GeoMatch] ${sub.name} em atraso desde ${fmtDate(a.due)} · ${fmtBRL(sub.amount)}`
+    ? `[GeoMatch] ${sub.name} em atraso desde ${fmtDate(a.due)} · ${fmtBRL(a.toPay)}`
     : `[GeoMatch] ${sub.name} vence ${inDaysLabel(a.diff)} · ${fmtBRL(sub.amount)}`;
 
   const tone = late ? { bg: '#FDECEA', fg: '#7A1A12' } : { bg: '#FEF0E1', fg: '#6B2E05' };
@@ -256,9 +266,9 @@ export function buildMessage(sub, today, ctx = {}) {
 <h1 style="margin:0 0 16px;font-size:20px">${esc(title)}</h1>
 <table role="presentation" width="100%" style="background:${tone.bg};color:${tone.fg};border-radius:12px;border-collapse:separate"><tr>
 <td style="padding:16px"><div style="font-size:13px">${late ? 'Em atraso desde' : 'Vencimento'}</div><div style="font-family:monospace;font-size:22px;font-weight:bold">${fmtDate(a.due, true)}</div></td>
-<td style="padding:16px;text-align:right"><div style="font-size:13px">Valor</div><div style="font-family:monospace;font-size:22px;font-weight:bold">${fmtBRL(sub.amount)}</div></td>
+<td style="padding:16px;text-align:right"><div style="font-size:13px">Valor</div><div style="font-family:monospace;font-size:22px;font-weight:bold">${fmtBRL(a.toPay)}</div></td>
 </tr></table>
-${late && a.openCycles.length > 1 ? `<p style="margin:16px 0 0">${a.openCycles.length} mensalidades em aberto (${a.openCycles.map(fmtCycle).join(', ')}) · total estimado ${fmtBRL(a.overdue)}. Confirme o valor no painel do fornecedor.</p>` : ''}
+${late && (a.openCycles.length > 1 || a.overdueManual) ? `<p style="margin:16px 0 0">${esc(overdueNote(a))}</p>` : ''}
 ${sub.risk ? `<p style="margin:16px 0"><b>${late ? 'Impacto' : 'O que acontece se não pagar'}:</b> ${esc(sub.risk)}</p>` : '<div style="height:16px"></div>'}
 <div style="font-size:13px;color:#5B6270">Como pagar</div>
 <ol style="margin:4px 0 16px;padding-left:20px">
@@ -266,7 +276,7 @@ ${sub.risk ? `<p style="margin:16px 0"><b>${late ? 'Impacto' : 'O que acontece s
 <li>O valor libera limite no cartão de crédito.</li>
 <li>${esc(sub.name)} debita a assinatura automaticamente${esc(cardLine)}.</li>
 </ol>
-${qrUrl && sub.pixCode ? `<img src="${esc(qrUrl)}" width="180" height="180" alt="QR Code Pix ${esc(fmtBRL(sub.amount))}" style="display:block;margin:0 0 12px;border:1px solid #E2E4DE;border-radius:8px">` : ''}
+${qrUrl && sub.pixCode ? `<img src="${esc(qrUrl)}" width="180" height="180" alt="QR Code Pix ${esc(fmtBRL(a.toPay))}" style="display:block;margin:0 0 12px;border:1px solid #E2E4DE;border-radius:8px">` : ''}
 <div style="font-family:monospace;font-size:12px;background:#F6F7F4;padding:10px 12px;border-radius:8px;word-break:break-all">${esc(pixLine)}</div>
 ${panelUrl ? `<p style="margin:20px 0 0"><a href="${esc(panelUrl)}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#1D4ED8;color:#FFFFFF;font-weight:bold;text-decoration:none">Abrir painel de assinaturas</a></p>` : ''}
 </div></div></body></html>`;

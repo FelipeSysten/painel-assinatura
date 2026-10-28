@@ -17,6 +17,8 @@ test('status das assinaturas do mockup', () => {
   assert.equal(google.state, 'late');
   assert.equal(google.due, '2026-06-01');
   assert.deepEqual(google.openCycles, ['2026-06', '2026-07', '2026-08', '2026-09', '2026-10']);
+  assert.equal(google.overdue, 28000);
+  assert.equal(google.toPay, 28000);
   assert.equal(render.state, 'soon');
   assert.equal(render.diff, 4);
   assert.equal(claude.state, 'ok');
@@ -26,6 +28,7 @@ test('status das assinaturas do mockup', () => {
 test('resumo: próximo vencimento 01/11 Render + Google', () => {
   const s = summary(seedState().subs, TODAY);
   assert.equal(s.monthly, 94900);
+  assert.equal(s.overdue, 28000);
   assert.equal(s.nextDue, '2026-11-01');
   assert.equal(s.nextAmount, 39900);
   assert.equal(s.next30, 94900);
@@ -37,7 +40,11 @@ test('pagar quita todos os meses em atraso e desfazer volta', () => {
   const a = analyze(paid.subs[0], TODAY);
   assert.equal(a.state, 'soon');
   assert.equal(a.due, '2026-11-01');
-  assert.equal(undoPayment(paid, 'google').subs[0].paidThrough, '2026-05');
+  assert.equal(paid.subs[0].overdueOverride, null);
+  assert.equal(paid.history[0].amount, 28000);
+  const undone = undoPayment(paid, 'google').subs[0];
+  assert.equal(undone.paidThrough, '2026-05');
+  assert.equal(undone.overdueOverride, 28000);
 });
 
 test('agenda de alertas', () => {

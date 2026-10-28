@@ -1,4 +1,4 @@
-# Painel de assinaturas · GeoMatch
+﻿# Painel de assinaturas · GeoMatch
 
 Painel com as assinaturas do projeto (Google Workspace, Render, Claude Code…), status de vencimento calculado automaticamente, Pix com QR Code para cada uma e alertas por WhatsApp e e-mail.
 
@@ -15,7 +15,7 @@ Painel com as assinaturas do projeto (Google Workspace, Render, Claude Code…),
 ## Subir na Vercel
 
 1. Envie esta pasta para um repositório no GitHub e importe na Vercel (ou rode `vercel` na pasta). Não precisa configurar build: o `vercel.json` já define tudo.
-2. **Storage**: no projeto da Vercel, vá em *Storage → Upstash for Redis → Create/Connect*. As variáveis `KV_REST_API_URL` e `KV_REST_API_TOKEN` são criadas sozinhas. Sem isso o painel funciona em "modo local" (dados só no navegador e sem alertas automáticos).
+2. **Banco de dados (gratuito)**: no projeto da Vercel, vá em *Storage → Create Database → Neon (Serverless Postgres)*, escolha o plano **Free** e a região São Paulo (`sa-east-1`) se disponível, e conecte ao projeto. A variável `DATABASE_URL` é criada sozinha e a tabela é criada automaticamente no primeiro acesso. Também funciona com uma conta direta em neon.tech: basta colar a connection string em `DATABASE_URL`. Sem isso o painel funciona em "modo local" (dados só no navegador e sem alertas automáticos).
 3. **Variáveis de ambiente** (*Settings → Environment Variables*), veja `.env.example`:
    - `PAINEL_SENHA`: senha do painel (obrigatória).
    - `CRON_SECRET`: valor aleatório longo (obrigatório para os alertas automáticos).
@@ -39,10 +39,10 @@ npm test
 
 - `public/`: site estático (`index.html`, `app.js`, `styles.css`) e `core.js` com a lógica de datas, status, alertas, mensagens e Pix (usado também pelo servidor).
 - `api/`: funções da Vercel. `state` (ler/salvar), `cron` (alertas), `test-alert`, `qr` (PNG do QR Code), `whatsapp` (webhook do Twilio).
-- `lib/`: armazenamento (Upstash Redis), envio (Resend, CallMeBot, Twilio), autenticação e dados iniciais.
+- `lib/`: armazenamento (Neon Postgres), envio (Resend, CallMeBot, Twilio), autenticação e dados iniciais.
 - `Main.dc.html`, `Alertas.dc.html`, `canvas.json`, `qr/`: mockups originais (não vão para o deploy).
 
 ## Observações
 
 - O Pix do **Render** foi gerado pelo painel com a mesma chave Pix dos QR Codes do Google e do Claude (recebedor "57.894.816 FELIPE DE SOUZ", Itabuna). Confira o recebedor no app do banco antes do primeiro pagamento.
-- O atraso do Google é estimado em 5 mensalidades (jun a out/2026). Confirme o valor real no Google Admin.
+- O atraso do Google está como R$ 280,00 pelas 5 mensalidades (jun a out/2026), no campo "Valor em atraso informado". O Pix usado é o QR Code original do Google (R$ 279,00), mantido por escolha.

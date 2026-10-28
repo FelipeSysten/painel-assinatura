@@ -1,7 +1,7 @@
 import {
   todayISO, daysBetween, fmtLongDate, fmtDate, fmtCycle, fmtBRL, parseBRL, addMonths, dueDate, inDaysLabel,
   analyze, statusLabel, dueLine, sortByUrgency, summary, applyPayment, undoPayment, lastPayment,
-  alertSchedule, buildMessage, buildPix, parsePix
+  alertSchedule, buildMessage, buildPix, parsePix, overdueNote
 } from './core.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -96,7 +96,9 @@ function pixIssues(sub) {
   const p = parsePix(sub.pixCode);
   if (!p.valid) return ['O código Pix parece inválido (dígito verificador não confere). Cole o código de novo.'];
   const out = [];
-  if (p.amount != null && p.amount !== sub.amount) out.push(`O Pix está com ${fmtBRL(p.amount)}, mas a assinatura custa ${fmtBRL(sub.amount)}.`);
+  const a = analyze(sub, today());
+  // pixKeep: o usuário escolheu manter esse QR Code mesmo com valor diferente
+  if (p.amount != null && p.amount !== a.toPay && !sub.pixKeep) out.push(`O Pix está com ${fmtBRL(p.amount)}, mas o valor a pagar é ${fmtBRL(a.toPay)}.`);
   return out;
 }
 
@@ -167,7 +169,7 @@ function panelView() {
 
   const notices = [];
   if (ui.storage === 'local') {
-    notices.push(`<div class="notice info">${icon.info}<div class="grow"><b>Modo local</b><div class="desc">Os dados ficam salvos só neste navegador e os alertas automáticos não rodam. Conecte o Upstash Redis no projeto da Vercel para salvar no servidor.</div></div></div>`);
+    notices.push(`<div class="notice info">${icon.info}<div class="grow"><b>Modo local</b><div class="desc">Os dados ficam salvos só neste navegador e os alertas automáticos não rodam. Conecte o Neon Postgres (gratuito) no projeto da Vercel para salvar no servidor.</div></div></div>`);
   }
   if (!ui.channels.whatsapp && !ui.channels.email) {
     notices.push(`<div class="notice info">${icon.info}<div class="grow"><b>Nenhum canal de envio configurado</b><div class="desc">Configure o Resend (e-mail) e/ou CallMeBot/Twilio (WhatsApp) nas variáveis de ambiente para os alertas saírem de verdade. Veja o README.</div></div></div>`);
@@ -175,7 +177,7 @@ function panelView() {
   for (const s of sorted) {
     const a = analyze(s, t);
     if (a.state === 'late') {
-      notices.push(`<div class="notice red">${icon.warn}<div class="grow"><b>${esc(s.name)}${s.what ? ` (${esc(s.what)})` : ''} em atraso desde ${fmtDate(a.due)} · vence todo dia ${String(s.dueDay).padStart(2, '0')}</b><div class="desc">Se não pagar: ${esc(s.risk)}</div></div><button type="button" class="btn btn-red" data-action="select" data-id="${s.id}">Pagar ${fmtBRL(s.amount)}</button></div>`);
+      notices.push(`<div class="notice red">${icon.warn}<div class="grow"><b>${esc(s.name)}${s.what ? ` (${esc(s.what)})` : ''} em atraso desde ${fmtDate(a.due)} · vence todo dia ${String(s.dueDay).padStart(2, '0')}</b><div class="desc">Se não pagar: ${esc(s.risk)}</div></div><button type="button" class="btn btn-red" data-action="select" data-id="${s.id}">Pagar ${fmtBRL(a.toPay)}</button></div>`);
     } else if (a.state === 'soon') {
       notices.push(`<div class="notice amber">${icon.clock}<div class="grow"><b>${esc(s.name)} vence ${inDaysLabel(a.diff)} (${fmtDate(a.due)})</b><div class="desc">Se não pagar: ${esc(s.risk)}</div></div><button type="button" class="btn btn-amber" data-action="select" data-id="${s.id}">Ver Pix</button></div>`);
     }
@@ -185,7 +187,7 @@ function panelView() {
   const stats = `
   <section class="stats" aria-label="Resumo">
     <div class="card stat"><div class="small muted">Custo mensal</div><div class="v">${fmtBRL(sum.monthly)}</div><div class="small muted">${subs.length} assinatura${subs.length === 1 ? '' : 's'} · cartão •••• ${esc(settings.card?.last4 || '----')}</div></div>
-    <div class="card stat"><div class="small muted">Em atraso</div><div class="v ${sum.overdue ? 'c-red' : 'c-green'}">${fmtBRL(sum.overdue)}</div><div class="small muted">${sum.overdue ? esc(lateNames) + ' · confirmar total' : 'Nada em atraso'}</div></div>
+    <div class="card stat"><div class="small muted">Em atraso</div><div class="v ${sum.overdue ? 'c-red' : 'c-green'}">${fmtBRL(sum.overdue)}</div><div class="small muted">${sum.overdue ? esc(lateNames) + (sum.lateSubs.every((l) => l.a.overdueManual) ? ' · valor informado' : ' · confirmar total') : 'Nada em atraso'}</div></div>
     <div class="card stat"><div class="small muted">Próximo vencimento</div><div class="v c-amber">${sum.nextDue ? fmtDate(sum.nextDue) : '—'}</div><div class="small muted">${sum.nextDue ? `${esc(sum.nextSubs.map((s) => s.name).join(' + '))} · ${fmtBRL(sum.nextAmount)} · ${inDaysLabel(daysBetween(t, sum.nextDue))}` : 'Sem assinaturas'}</div></div>
     <div class="card stat"><div class="small muted">A pagar nos próximos 30 dias</div><div class="v">${fmtBRL(sum.next30)}</div><div class="small muted">${sum.next30Subs.length ? esc(sum.next30Subs.join(', ')) : 'Nada'}${sum.overdue ? ' · fora o atraso' : ''}</div></div>
   </section>`;
@@ -271,8 +273,8 @@ function sidePanel(sub, t) {
   const a = analyze(sub, t);
   const last = lastPayment(ui.data, sub.id);
   const issues = pixIssues(sub);
-  const toPay = a.state === 'late' && a.openCycles.length > 1
-    ? `<div class="warn">${a.openCycles.length} mensalidades em aberto (${a.openCycles.map(fmtCycle).join(', ')}) · total estimado ${fmtBRL(a.overdue)}. Confirme o valor no painel do fornecedor.</div>`
+  const toPay = a.state === 'late' && (a.openCycles.length > 1 || a.overdueManual)
+    ? `<div class="${a.overdueManual ? 'small muted' : 'warn'}">${esc(overdueNote(a))}</div>`
     : '';
   const paidLabel = a.state === 'late' ? `Marcar como pago (quita ${a.openCycles.length === 1 ? fmtCycle(a.cycle) : `${a.openCycles.length} meses`})` : `Marcar ${fmtCycle(a.cycle)} como pago`;
   return `
@@ -285,10 +287,10 @@ function sidePanel(sub, t) {
     <div class="qr-box">
       ${sub.pixCode && !issues.some((i) => i.includes('inválido'))
         ? `<img src="${qrSrc(sub.pixCode)}" alt="QR Code Pix de ${esc(sub.name)}" width="220" height="220">`
-        : `<div class="qr-empty">${icon.qr}<div>QR Code ainda não cadastrado</div><button class="btn btn-sm btn-outline" data-action="edit-sub" data-id="${sub.id}">Adicionar Pix de ${fmtBRL(sub.amount)}</button></div>`}
+        : `<div class="qr-empty">${icon.qr}<div>QR Code ainda não cadastrado</div><button class="btn btn-sm btn-outline" data-action="edit-sub" data-id="${sub.id}">Adicionar Pix de ${fmtBRL(a.toPay)}</button></div>`}
     </div>
     <div class="stack-4" style="gap:10px">
-      <div class="kv"><div class="small muted">Valor</div><div class="v">${fmtBRL(sub.amount)}</div></div>
+      <div class="kv"><div class="small muted">${a.state === 'late' ? 'Valor a pagar' : 'Valor'}</div><div class="v">${fmtBRL(a.toPay)}</div></div>
       ${toPay}
       <label for="pixcode" class="small muted">Pix copia e cola</label>
       <div class="copy-row">
@@ -296,6 +298,8 @@ function sidePanel(sub, t) {
         <button type="button" class="btn btn-ghost" data-action="copy" ${sub.pixCode ? '' : 'disabled'}>${ui.copied ? 'Copiado' : 'Copiar'}</button>
       </div>
       ${issues.map((i) => `<div class="warn">${esc(i)}</div>`).join('')}
+      ${sub.pixKeep && sub.pixCode && parsePix(sub.pixCode).amount != null && parsePix(sub.pixCode).amount !== a.toPay ? `<div class="small muted">QR Code de ${fmtBRL(parsePix(sub.pixCode).amount)}, mantido por escolha sua.</div>` : ''}
+      ${issues.length && ui.data.settings.pix?.key ? `<button type="button" class="btn btn-sm btn-outline" data-action="regen-pix">Gerar Pix de ${fmtBRL(a.toPay)} com minha chave</button>` : ''}
       <div class="small muted">O valor cai na conta, libera limite e a assinatura é debitada automaticamente no cartão •••• ${esc(ui.data.settings.card?.last4 || '----')}.</div>
       ${sub.note ? `<div class="small"><b>Observação:</b> ${esc(sub.note)}</div>` : ''}
     </div>
@@ -456,6 +460,7 @@ function openSubForm(sub) {
   f.dueDay.value = sub?.dueDay || '';
   f.risk.value = sub?.risk || '';
   f.note.value = sub?.note || '';
+  f.overdueOverride.value = sub?.overdueOverride != null ? (sub.overdueOverride / 100).toFixed(2).replace('.', ',') : '';
   f.pixCode.value = sub?.pixCode || '';
   f.paidThrough.innerHTML = paidThroughOptions(dueDay, sub?.paidThrough || defaultPaidThrough(dueDay));
   $('[data-action="delete-sub"]', formSub).hidden = !sub;
@@ -493,15 +498,17 @@ formSub.addEventListener('submit', (e) => {
   const dueDay = Number(f.dueDay.value);
   if (!(amount > 0)) return toast('Informe um valor válido, ex.: 120,00');
   if (!(dueDay >= 1 && dueDay <= 31)) return toast('O dia de vencimento vai de 1 a 31.');
+  const overdueOverride = f.overdueOverride.value.trim() ? parseBRL(f.overdueOverride.value) : null;
+  if (overdueOverride !== null && !(overdueOverride > 0)) return toast('Valor em atraso inválido, ex.: 280,00');
   const name = f.name.value.trim();
   const fields = {
     name, mono: (f.mono.value.trim() || name[0] || '?').toUpperCase(), category: f.category.value.trim(), what: f.what.value.trim(),
-    amount, dueDay, paidThrough: f.paidThrough.value, risk: f.risk.value.trim(), note: f.note.value.trim(), pixCode: f.pixCode.value.trim()
+    amount, dueDay, paidThrough: f.paidThrough.value, risk: f.risk.value.trim(), note: f.note.value.trim(), pixCode: f.pixCode.value.trim(), overdueOverride
   };
   const subs = ui.data.subs;
   let next;
   if (ui.editing) {
-    next = { ...ui.data, subs: subs.map((s) => (s.id === ui.editing ? { ...s, ...fields } : s)) };
+    next = { ...ui.data, subs: subs.map((s) => (s.id === ui.editing ? { ...s, ...fields, pixKeep: !!s.pixKeep && s.pixCode === fields.pixCode } : s)) };
   } else {
     const base = name.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'assinatura';
     let id = base;
@@ -629,6 +636,13 @@ const actions = {
     if (!(amount > 0)) return toast('Informe o valor da assinatura antes de gerar o Pix.');
     f.pixCode.value = buildPix({ ...pix, amount });
     checkPixField();
+  },
+  'regen-pix'() {
+    const sub = ui.data.subs.find((s) => s.id === ui.selected);
+    const amount = analyze(sub, today()).toPay;
+    if (!confirm(`Trocar o Pix de ${sub.name} por um novo de ${fmtBRL(amount)} gerado com sua chave? Confira o recebedor no banco antes de pagar.`)) return;
+    const pixCode = buildPix({ ...ui.data.settings.pix, amount });
+    save({ ...ui.data, subs: ui.data.subs.map((s) => (s.id === sub.id ? { ...s, pixCode } : s)) }, `Pix de ${fmtBRL(amount)} gerado.`);
   },
   'save-channels'() {
     const f = $('#form-channels').elements;
