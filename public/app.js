@@ -61,7 +61,7 @@ function save(next, okMsg) {
     if (r.status === 409) {
       ui.data = r.body.state;
       render();
-      toast('Os dados mudaram em outro lugar (ex.: "PAGO" pelo WhatsApp). Recarreguei a versão mais recente.');
+      toast('Os dados mudaram em outro lugar. Recarreguei a versão mais recente.');
     } else if (!r.ok) {
       toast(r.body.error || 'Não foi possível salvar.');
     } else {
@@ -171,8 +171,8 @@ function panelView() {
   if (ui.storage === 'local') {
     notices.push(`<div class="notice info">${icon.info}<div class="grow"><b>Modo local</b><div class="desc">Os dados ficam salvos só neste navegador e os alertas automáticos não rodam. Conecte o Neon Postgres (gratuito) no projeto da Vercel para salvar no servidor.</div></div></div>`);
   }
-  if (!ui.channels.whatsapp && !ui.channels.email) {
-    notices.push(`<div class="notice info">${icon.info}<div class="grow"><b>Nenhum canal de envio configurado</b><div class="desc">Configure o Resend (e-mail) e/ou CallMeBot/Twilio (WhatsApp) nas variáveis de ambiente para os alertas saírem de verdade. Veja o README.</div></div></div>`);
+  if (!ui.channels.email) {
+    notices.push(`<div class="notice info">${icon.info}<div class="grow"><b>Servidor de e-mail não configurado</b><div class="desc">Defina SMTP_HOST, SMTP_USER e SMTP_PASS nas variáveis de ambiente da Vercel para os alertas saírem de verdade. Veja o README.</div></div></div>`);
   }
   for (const s of sorted) {
     const a = analyze(s, t);
@@ -254,8 +254,7 @@ function timelineRows(sub, t) {
     let text = e.text;
     if (sent) {
       cls = 'sent';
-      const via = [sent.whatsapp && 'WhatsApp', sent.email && 'e-mail'].filter(Boolean).join(' e ');
-      text = `Enviado por ${via || '—'}`;
+      text = `E-mail enviado${sent.to ? ` para ${sent.to}` : ''}`;
     } else if (e.kind === 'late') {
       cls = 'late';
     } else if (e.key && e.date < t) {
@@ -308,7 +307,7 @@ function sidePanel(sub, t) {
       <ol class="timeline">${timelineRows(sub, t)}</ol>
     </div>
     <button type="button" class="btn btn-dark btn-block" data-action="mark-paid">${esc(paidLabel)}</button>
-    ${last ? `<div class="small muted">Último pagamento registrado em ${fmtDate(last.at.slice(0, 10))}${last.source === 'whatsapp' ? ' pelo WhatsApp' : ''} (até ${fmtCycle(last.to)}). <button class="btn-link" data-action="undo-paid">Desfazer</button></div>` : ''}
+    ${last ? `<div class="small muted">Último pagamento registrado em ${fmtDate(last.at.slice(0, 10))} (até ${fmtCycle(last.to)}). <button class="btn-link" data-action="undo-paid">Desfazer</button></div>` : ''}
   </aside>`;
 }
 
@@ -355,7 +354,7 @@ function stepsSection() {
   <section class="card panel" aria-label="Como funciona o pagamento">
     <h2>Como o pagamento funciona</h2>
     <div class="steps">
-      <div><div class="n">01 · Alerta</div><b>Mensagem no WhatsApp e no e-mail</b><div class="d">${esc(alertWhen(ui.data.settings))}.</div></div>
+      <div><div class="n">01 · Alerta</div><b>E-mail de alerta</b><div class="d">${esc(alertWhen(ui.data.settings))}.</div></div>
       <div><div class="n">02 · Pix</div><b>Pagar o QR Code da assinatura</b><div class="d">Cada assinatura tem o próprio Pix com o valor exato.</div></div>
       <div><div class="n">03 · Limite</div><b>O valor libera limite no cartão</b><div class="d">O dinheiro fica disponível na conta vinculada ao cartão de crédito.</div></div>
       <div><div class="n">04 · Débito</div><b>A assinatura é cobrada no cartão</b><div class="d">${esc(names)} debitam automaticamente no cartão •••• ${esc(ui.data.settings.card?.last4 || '----')}.</div></div>
@@ -368,22 +367,18 @@ function channelsSection() {
   const ch = ui.channels;
   const badEmail = /@geomatchbr\.com\s*$/i.test(s.email || '');
   return `
-  <section class="card panel" aria-label="Canais de alerta">
+  <section class="card panel" aria-label="E-mail de alerta">
     <div class="section-head"><h2>Para onde vão os alertas</h2>
-      <div class="small muted"><span class="status-dot ${ch.whatsapp ? 'on' : ''}"></span>WhatsApp ${ch.whatsapp ? `ativo (${esc(ch.whatsappProvider)})` : 'não configurado'} · <span class="status-dot ${ch.email ? 'on' : ''}"></span>E-mail ${ch.email ? 'ativo' : 'não configurado'}</div>
+      <div class="small muted"><span class="status-dot ${ch.email ? 'on' : ''}"></span>Servidor SMTP ${ch.email ? `ativo · remetente ${esc(ch.emailFrom)}` : 'não configurado'}</div>
     </div>
     <form id="form-channels" class="channels">
-      <label class="field">WhatsApp
-        <input name="whatsapp" type="tel" inputmode="tel" value="${esc(s.whatsapp)}" placeholder="55 73 99999-9999">
-        <span class="hint">Com DDI e DDD. Recebe todos os alertas, inclusive os de atraso.</span>
-      </label>
       <label class="field">E-mail
-        <input name="email" type="email" value="${esc(s.email)}" placeholder="seu.email@gmail.com">
-        <span class="hint ${badEmail ? 'bad' : ''}" style="${badEmail ? '' : 'color:var(--amber-2);font-weight:500'}">Não use um endereço @geomatchbr.com: se o Google suspender o domínio, o alerta não chega.</span>
+        <input name="email" type="email" required value="${esc(s.email)}" placeholder="Samueljim19@hotmail.com">
+        <span class="hint ${badEmail ? 'bad' : ''}" style="${badEmail ? '' : 'color:var(--amber-2);font-weight:500'}">Recebe todos os alertas, inclusive os de atraso. Não use um endereço @geomatchbr.com: se o Google suspender o domínio, o alerta não chega.</span>
       </label>
     </form>
     <div class="row-wrap">
-      <button type="button" class="btn btn-primary" data-action="save-channels">Salvar canais</button>
+      <button type="button" class="btn btn-primary" data-action="save-channels">Salvar e-mail</button>
       <button type="button" class="btn" data-action="test-alert">Enviar teste agora (${esc(ui.data.subs.find((x) => x.id === ui.selected)?.name || '—')})</button>
       ${ui.storage === 'server' ? '<button type="button" class="btn btn-ghost" data-action="run-cron">Rodar alertas de hoje</button>' : ''}
     </div>
@@ -395,30 +390,21 @@ function previewView() {
   const subs = sortByUrgency(ui.data.subs, t);
   const sub = subs.find((s) => s.id === ui.selected) || subs[0];
   if (!sub) return '<div class="empty">Cadastre uma assinatura para ver a prévia dos alertas.</div>';
-  const msg = buildMessage(sub, t, { card: ui.data.settings.card, panelUrl: location.origin, qrUrl: sub.pixCode ? location.origin + qrSrc(sub.pixCode) : '', canReply: ui.channels.canReply });
-  const after = analyze(applyPayment(ui.data, sub.id, t).subs.find((s) => s.id === sub.id), t);
+  const msg = buildMessage(sub, t, { card: ui.data.settings.card, panelUrl: location.origin, qrUrl: sub.pixCode ? location.origin + qrSrc(sub.pixCode) : '' });
   const pick = subs.map((s) => `<button type="button" class="btn btn-sm ${s.id === sub.id ? 'btn-dark' : ''}" data-action="select" data-id="${s.id}">${esc(s.name)}</button>`).join('');
   return `
   <div class="row-wrap"><span class="small muted">Assinatura:</span>${pick}</div>
-  <div class="previews">
-    <section class="card pv" aria-label="Prévia WhatsApp">
-      <div class="pv-head"><div class="pv-avatar">GM</div><div class="stack-4" style="gap:0"><b>GeoMatch Alertas</b><span class="small muted">WhatsApp · ${esc(ui.data.settings.whatsapp || '[cadastre seu número]')}</span></div></div>
-      <div class="chat">
-        <div class="day">Hoje</div>
-        <div class="bubble">${esc(msg.whatsapp).replace(/\*([^*\n]+)\*/g, '<b>$1</b>')}<span class="time">09:00</span></div>
-        ${ui.channels.canReply ? `<div class="bubble me">PAGO<span class="time">09:12</span></div><div class="bubble">Registrado. Os alertas de ${esc(sub.name)} param até o próximo vencimento (${fmtDate(after.due)}).</div>` : ''}
-      </div>
-    </section>
+  <div class="previews previews-1">
     <section class="card pv" aria-label="Prévia e-mail">
       <div class="mail-head">
-        <div><span class="muted">De: </span>${esc(ui.channels.emailFrom || 'Alertas GeoMatch <[REMETENTE FORA DO DOMÍNIO]>')}</div>
-        <div><span class="muted">Para: </span>${esc(ui.data.settings.email || '[cadastre seu e-mail]')}</div>
+        <div><span class="muted">De: </span>${esc(ui.channels.emailFrom ? `Alertas GeoMatch <${ui.channels.emailFrom.replace(/^.*<|>$/g, '')}>` : 'Alertas GeoMatch <[configure o SMTP]>')}</div>
+        <div><span class="muted">Para: </span>${esc(ui.data.settings.email || 'Samueljim19@hotmail.com')}</div>
         <div class="subj">${esc(msg.subject)}</div>
       </div>
       <iframe id="mail-frame" class="mail-frame" title="Prévia do e-mail" sandbox="" data-html="${esc(msg.html)}"></iframe>
     </section>
   </div>
-  <div class="row-wrap"><button type="button" class="btn" data-action="test-alert">Enviar este alerta agora</button><span class="small muted">Os alertas automáticos saem às 9h (e 18h no reforço do D-1), horário de Brasília.</span></div>`;
+  <div class="row-wrap"><button type="button" class="btn" data-action="test-alert">Enviar este e-mail agora</button><span class="small muted">Os alertas automáticos saem às 9h (e 18h no reforço do D-1), horário de Brasília.</span></div>`;
 }
 
 // ---------- formulário de assinatura ----------
@@ -648,15 +634,17 @@ const actions = {
     const f = $('#form-channels').elements;
     const email = f.email.value.trim();
     if (email && !f.email.checkValidity()) return toast('E-mail inválido.');
-    save({ ...ui.data, settings: { ...ui.data.settings, whatsapp: f.whatsapp.value.trim(), email } }, 'Canais salvos.');
+    if (!email) return toast('Informe o e-mail que vai receber os alertas.');
+    const { whatsapp, ...settings } = ui.data.settings;
+    save({ ...ui.data, settings: { ...settings, email } }, 'E-mail salvo.');
   },
   async 'test-alert'(el) {
     el.disabled = true;
     const r = await api('/api/test-alert', { method: 'POST', body: JSON.stringify({ subId: ui.selected, state: ui.storage === 'local' ? ui.data : undefined }) });
     el.disabled = false;
     if (!r.ok) return toast(r.body.error || 'Falha ao enviar.');
-    const fmt = (name, x) => `${name}: ${x.ok ? 'enviado' : x.skipped || x.error}`;
-    toast(`${fmt('WhatsApp', r.body.whatsapp)} · ${fmt('E-mail', r.body.email)}`);
+    const x = r.body.email;
+    toast(x.ok ? `E-mail enviado para ${r.body.to}.` : `E-mail não enviado: ${x.skipped || x.error}`);
   },
   async 'run-cron'(el) {
     el.disabled = true;

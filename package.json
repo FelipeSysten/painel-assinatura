@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Painel de assinaturas da GeoMatch com Pix, alertas por WhatsApp e e-mail",
+  "description": "Painel de assinaturas da GeoMatch com Pix, alertas por e-mail",
   "engines": {
     "node": ">=20"
   },
@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
+    "nodemailer": "^10.2.1",
     "qrcode": "^1.5.4"
   }
 }

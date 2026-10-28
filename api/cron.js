@@ -19,11 +19,11 @@ async function run(request) {
       continue;
     }
     const r = await deliver(state, sub, today, base);
-    if (r.whatsapp.ok || r.email.ok) log[entry.key] = { at: now.toISOString(), whatsapp: r.whatsapp.ok, email: r.email.ok };
+    if (r.email.ok) log[entry.key] = { at: now.toISOString(), email: true, to: r.to };
     results.push({ sub: sub.id, tag: entry.tag, ...r });
   }
   if (hasStore()) await saveLog(log);
-  return json({ today, slot, sent: results.filter((r) => r.whatsapp?.ok || r.email?.ok).length, results });
+  return json({ today, slot, sent: results.filter((r) => r.email?.ok).length, results });
 }
 
 export async function GET(request) {

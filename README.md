@@ -1,15 +1,14 @@
 ﻿# Painel de assinaturas · GeoMatch
 
-Painel com as assinaturas do projeto (Google Workspace, Render, Claude Code…), status de vencimento calculado automaticamente, Pix com QR Code para cada uma e alertas por WhatsApp e e-mail.
+Painel com as assinaturas do projeto (Google Workspace, Render, Claude Code…), status de vencimento calculado automaticamente, Pix com QR Code para cada uma e alertas por e-mail para **Samueljim19@hotmail.com**.
 
 ## O que funciona
 
-- **Status automático**: em dia, vence em N dias, em atraso (com mensalidades em aberto e total estimado), calculado no fuso de São Paulo.
-- **Pix**: QR Code e copia e cola por assinatura. Dá para colar o código, ler o QR de uma imagem ou gerar um Pix novo a partir da sua chave. O painel confere o dígito verificador e avisa se o valor do Pix não bate com a assinatura.
+- **Status automático**: em dia, vence em N dias, em atraso (com mensalidades em aberto e total), calculado no fuso de São Paulo.
+- **Pix**: QR Code e copia e cola por assinatura. Dá para colar o código, ler o QR de uma imagem ou gerar um Pix novo a partir da sua chave. O painel confere o dígito verificador e avisa se o valor do Pix não bate com o valor a pagar.
 - **Cadastro**: criar, editar e excluir assinaturas; marcar como pago (quita todos os meses em atraso) e desfazer.
-- **Alertas**: D-7, D-3, D-1 (9h + reforço às 18h), no dia, e todo dia enquanto estiver em atraso. Cada alerta é enviado uma vez só e aparece como "Enviado" no painel.
-- **Prévia** das mensagens de WhatsApp e e-mail (aba "Prévia dos alertas").
-- **Responder "PAGO"** no WhatsApp marca a assinatura como paga (só com Twilio).
+- **Alertas por e-mail (SMTP)**: D-7, D-3, D-1 (9h + reforço às 18h), no dia, e todo dia enquanto estiver em atraso. O QR Code do Pix vai anexado no corpo do e-mail. Cada alerta é enviado uma vez só e aparece como "E-mail enviado" no painel.
+- **Prévia** do e-mail (aba "Prévia dos alertas").
 - Protegido por senha; dados pessoais ficam só no servidor.
 
 ## Subir na Vercel
@@ -19,13 +18,21 @@ Painel com as assinaturas do projeto (Google Workspace, Render, Claude Code…),
 3. **Variáveis de ambiente** (*Settings → Environment Variables*), veja `.env.example`:
    - `PAINEL_SENHA`: senha do painel (obrigatória).
    - `CRON_SECRET`: valor aleatório longo (obrigatório para os alertas automáticos).
-   - E-mail: `RESEND_API_KEY` e `ALERT_EMAIL_FROM` (remetente de um domínio verificado no Resend, **fora** do geomatchbr.com).
-   - WhatsApp, uma das opções:
-     - **CallMeBot** (grátis, para o seu próprio número): mande a mensagem de ativação descrita em callmebot.com, receba a apikey e defina `WHATSAPP_PROVIDER=callmebot` e `CALLMEBOT_APIKEY`.
-     - **Twilio**: `WHATSAPP_PROVIDER=twilio`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`. Para responder "PAGO", configure o webhook de mensagens recebidas para `https://SEU-DOMINIO/api/whatsapp` e defina `PAINEL_URL`.
-4. Faça o redeploy, abra o painel, cadastre seu WhatsApp e e-mail em "Para onde vão os alertas" e clique em **Enviar teste agora**.
+   - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`: servidor que envia os e-mails. Opcional: `ALERT_EMAIL_FROM`.
+4. Faça o redeploy, abra o painel e clique em **Enviar teste agora** em "Para onde vão os alertas". O e-mail de destino já vem como Samueljim19@hotmail.com e pode ser trocado ali.
 
 Os crons rodam às 12:00 e 21:00 UTC (9h e 18h em Brasília). No plano Hobby a Vercel pode executar em qualquer minuto dentro dessa hora.
+
+### Qual SMTP usar (gratuito)
+
+Use uma conta **fora** do domínio geomatchbr.com: se o Google Workspace for suspenso, o alerta precisa continuar saindo.
+
+| Serviço | SMTP_HOST | Porta | Observação |
+|---|---|---|---|
+| **Gmail** (recomendado) | `smtp.gmail.com` | 465 (`SMTP_SECURE=true`) | Ative a verificação em 2 etapas e crie uma *senha de app* em myaccount.google.com/apppasswords; use-a em `SMTP_PASS`. |
+| **Brevo** | `smtp-relay.brevo.com` | 587 (`SMTP_SECURE=false`) | 300 e-mails/dia grátis. `SMTP_USER` e `SMTP_PASS` ficam em *SMTP & API*; verifique o remetente e defina `ALERT_EMAIL_FROM`. |
+
+Contas pessoais do Outlook/Hotmail não aceitam mais envio por SMTP com senha, por isso o Hotmail fica só como destinatário. Se o primeiro alerta cair no lixo eletrônico, marque como "Não é lixo eletrônico" e adicione o remetente aos contatos.
 
 ## Rodar localmente
 
@@ -35,11 +42,13 @@ npm run dev     # http://localhost:3000, senha "teste", dados em .data/dev-store
 npm test
 ```
 
+Para testar o envio local, defina as variáveis `SMTP_*` antes do `npm run dev`.
+
 ## Estrutura
 
 - `public/`: site estático (`index.html`, `app.js`, `styles.css`) e `core.js` com a lógica de datas, status, alertas, mensagens e Pix (usado também pelo servidor).
-- `api/`: funções da Vercel. `state` (ler/salvar), `cron` (alertas), `test-alert`, `qr` (PNG do QR Code), `whatsapp` (webhook do Twilio).
-- `lib/`: armazenamento (Neon Postgres), envio (Resend, CallMeBot, Twilio), autenticação e dados iniciais.
+- `api/`: funções da Vercel. `state` (ler/salvar), `cron` (alertas), `test-alert`, `qr` (PNG do QR Code).
+- `lib/`: armazenamento (Neon Postgres), envio de e-mail (SMTP via nodemailer), autenticação e dados iniciais.
 - `Main.dc.html`, `Alertas.dc.html`, `canvas.json`, `qr/`: mockups originais (não vão para o deploy).
 
 ## Observações

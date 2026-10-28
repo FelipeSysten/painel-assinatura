@@ -186,7 +186,7 @@ export function alertSchedule(sub, today, settings) {
   const key = (tag, date, slot) => `${sub.id}:${a.cycle}:${tag}:${date}:${slot}`;
   if (a.state === 'late') {
     if (settings.atrasoDiario !== false) {
-      out.push({ key: key('ATRASO', today, 'manha'), tag: 'ATRASO', kind: 'late', date: today, slot: 'manha', recurring: true, text: 'Todo dia, 9h · WhatsApp + e-mail até marcar como pago' });
+      out.push({ key: key('ATRASO', today, 'manha'), tag: 'ATRASO', kind: 'late', date: today, slot: 'manha', recurring: true, text: 'Todo dia, 9h · e-mail até marcar como pago' });
     }
     out.push({ key: null, tag: 'DIA', kind: 'info', date: a.upcomingDue, slot: 'manha', text: `Vence mais uma mensalidade (${fmtCycle(a.upcomingCycle)}) e o atraso acumula` });
     return out;
@@ -195,7 +195,7 @@ export function alertSchedule(sub, today, settings) {
   for (const o of offsets) {
     const date = addDays(a.due, -o);
     const tag = TAG[o] || `D-${o}`;
-    const text = o === 0 ? 'Último aviso antes da cobrança no cartão' : 'WhatsApp + e-mail';
+    const text = o === 0 ? 'Último aviso antes da cobrança no cartão' : 'e-mail';
     out.push({ key: key(tag, date, 'manha'), tag, kind: 'soon', offset: o, date, slot: 'manha', text: `${fmtDate(date)} · 9h · ${text}` });
     if (o === 1 && settings.reforcoTarde !== false) {
       out.push({ key: key(tag, date, 'tarde'), tag, kind: 'soon', offset: o, date, slot: 'tarde', text: `${fmtDate(date)} · 18h · reforço à tarde` });
@@ -245,14 +245,14 @@ export function buildMessage(sub, today, ctx = {}) {
   const cardLine = card.last4 ? ` no cartão •••• ${card.last4}` : ' no cartão';
   const pixLine = sub.pixCode ? sub.pixCode : '[cadastre o Pix desta assinatura no painel]';
 
-  const lines = [`*${title}*`, lead];
-  if (sub.risk) lines.push(`*${late ? 'Impacto' : 'Se não pagar'}:* ${sub.risk}`);
-  lines.push(`*Valor:* ${amountLabel}`);
+  // versão em texto puro do e-mail (para clientes que não mostram HTML)
+  const lines = [title, lead];
+  if (sub.risk) lines.push(`${late ? 'Impacto' : 'Se não pagar'}: ${sub.risk}`);
+  lines.push(`Valor: ${amountLabel}`);
   if (!late) lines.push(`Pague o Pix para liberar o limite${cardLine}.`);
   lines.push('', 'Pix copia e cola:', pixLine);
   if (panelUrl) lines.push('', `Abrir no painel: ${panelUrl}`);
-  if (ctx.canReply) lines.push('', 'Responda *PAGO* depois de pagar.');
-  const whatsapp = lines.join('\n');
+  const text = lines.join('\n');
 
   const subject = late
     ? `[GeoMatch] ${sub.name} em atraso desde ${fmtDate(a.due)} · ${fmtBRL(a.toPay)}`
@@ -281,8 +281,7 @@ ${qrUrl && sub.pixCode ? `<img src="${esc(qrUrl)}" width="180" height="180" alt=
 ${panelUrl ? `<p style="margin:20px 0 0"><a href="${esc(panelUrl)}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#1D4ED8;color:#FFFFFF;font-weight:bold;text-decoration:none">Abrir painel de assinaturas</a></p>` : ''}
 </div></div></body></html>`;
 
-  const text = whatsapp.replace(/\*/g, '');
-  return { title, lead, whatsapp, subject, html, text, a };
+  return { title, lead, subject, html, text, a };
 }
 
 // ---------- Pix (BR Code / EMV) ----------
