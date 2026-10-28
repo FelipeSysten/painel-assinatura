@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>GeoMatch · Painel de assinaturas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F2F3EF}
+a{color:#1D4ED8}a:hover{color:#1E3A8A}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #F2F3EF; color: #15181D; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.45">
+<div style="max-width: 1320px; margin: 0 auto; padding: 32px 24px 64px; display: flex; flex-direction: column; gap: 24px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #5B6270">GeoMatch · Financeiro</div>
+<h1 style="margin: 0; font-size: 32px; line-height: 1.15; font-weight: 700; letter-spacing: -0.01em">Assinaturas e vencimentos</h1>
+<div style="color: #5B6270">Hoje, 28 de outubro de 2026 · pagamento via Pix para a conta vinculada ao cartão •••• 6218</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="min-height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid #C9CCC5; background: #FFFFFF; color: #15181D; font-size: 14px; font-weight: 600; cursor: pointer">Configurar alertas</button>
+<button type="button" style="min-height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid #1D4ED8; background: #1D4ED8; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">+ Nova assinatura</button>
+</div>
+</header>
+
+<section aria-label="Alertas críticos" style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 12px; background: #FDECEA; border: 1px solid #F3B8B2; color: #7A1A12">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+<div style="flex: 999 1 420px; min-width: 0">
+<div style="font-weight: 700">Google Workspace (geomatchbr.com) em atraso desde 01/06 · vence todo dia 01</div>
+<div style="font-size: 14px">Sem o e-mail do domínio: o suporte não recebe mensagens e os e-mails de recuperação de senha não chegam.</div>
+</div>
+<button type="button" onClick="{{pickGoogle}}" style="min-height: 44px; padding: 0 16px; border-radius: 10px; border: 0; background: #B42318; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Pagar R$ 279,00</button>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 12px; background: #FEF0E1; border: 1px solid #F5C99A; color: #6B2E05">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B54708" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+<div style="flex: 999 1 420px; min-width: 0">
+<div style="font-weight: 700">Render vence em 4 dias (01/11)</div>
+<div style="font-size: 14px">Se não pagar no dia 01, o servidor da GeoMatch para e o app sai do ar.</div>
+</div>
+<button type="button" onClick="{{pickRender}}" style="min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #B54708; background: #FFFFFF; color: #8A3A06; font-size: 14px; font-weight: 600; cursor: pointer">Ver Pix</button>
+</div>
+</section>
+
+<section aria-label="Resumo" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px">
+<div style="background: #FFFFFF; border: 1px solid #E2E4DE; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 13px; color: #5B6270">Custo mensal</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600">R$ 949,00</div>
+<div style="font-size: 13px; color: #5B6270">3 assinaturas · cartão •••• 6218</div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E4DE; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 13px; color: #5B6270">Em atraso</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #B42318">R$ 279,00</div>
+<div style="font-size: 13px; color: #5B6270">Google · desde jun/2026 · confirmar total</div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E4DE; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 13px; color: #5B6270">Próximo vencimento</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #B54708">01/11</div>
+<div style="font-size: 13px; color: #5B6270">Render + Google · R$ 399,00 · em 4 dias</div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E4DE; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 13px; color: #5B6270">A pagar nos próximos 30 dias</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600">R$ 949,00</div>
+<div style="font-size: 13px; color: #5B6270">Render, Google e Claude · fora o atraso</div>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+
+<section aria-label="Assinaturas" style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 700">Assinaturas do projeto</h2>
+<div style="font-size: 13px; color: #5B6270">Ordenadas por urgência</div>
+</div>
+<sc-for list="{{subs}}" as="s" hint-placeholder-count="4">
+<article style="background: #FFFFFF; border: 2px solid {{s.border}}; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px">
+<div style="width: 44px; height: 44px; border-radius: 10px; background: #EEF0EA; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 16px; color: #15181D; flex: 0 0 44px">{{s.mono}}</div>
+<div style="flex: 999 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<h3 style="margin: 0; font-size: 17px; font-weight: 700">{{s.name}}</h3>
+<span style="font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: {{s.pillBg}}; color: {{s.pillFg}}">{{s.statusLabel}}</span>
+</div>
+<div style="font-size: 13px; color: #5B6270">{{s.category}} · {{s.what}}</div>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: 1 0 auto">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 600">{{s.amount}}</div>
+<div style="font-size: 13px; color: #5B6270">{{s.dueLine}}</div>
+</div>
+</div>
+<div style="display: flex; gap: 10px; padding: 12px 14px; border-radius: 10px; background: #F6F7F4">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B6270" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: 0 0 18px; margin-top: 2px"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5"></path><path d="M12 16h.01"></path></svg>
+<div style="font-size: 14px"><span style="font-weight: 700">Se não pagar: </span>{{s.risk}}</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px">
+<div style="font-size: 13px; color: #5B6270">{{s.alertLine}}</div>
+<button type="button" onClick="{{s.pick}}" style="min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #1D4ED8; background: {{s.btnBg}}; color: {{s.btnFg}}; font-size: 14px; font-weight: 600; cursor: pointer">{{s.btnLabel}}</button>
+</div>
+</article>
+</sc-for>
+</section>
+
+<aside aria-label="Pagamento selecionado" style="flex: 1 1 360px; min-width: 0; background: #FFFFFF; border: 1px solid #E2E4DE; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #5B6270">Pagar via Pix</div>
+<h2 style="margin: 0; font-size: 20px; font-weight: 700">{{sel.name}}</h2>
+<div style="font-size: 14px; color: #5B6270">{{sel.dueLine}}</div>
+</div>
+<div style="display: flex; justify-content: center; padding: 16px; border-radius: 12px; background: #F6F7F4">
+<sc-if value="{{sel.hasQr}}" hint-placeholder-val="{{ true }}">
+<img src="{{sel.qr}}" alt="QR Code Pix de {{sel.name}}" style="width: 220px; height: 220px; object-fit: contain; background: #FFFFFF; border-radius: 8px">
+</sc-if>
+<sc-if value="{{sel.noQr}}" hint-placeholder-val="{{ false }}">
+<div style="width: 220px; height: 220px; border: 2px dashed #B8BCB3; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 16px; box-sizing: border-box; color: #5B6270; font-size: 14px">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5B6270" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4"></path></svg>
+<div>QR Code ainda não enviado</div>
+<div style="font-size: 12px">[ANEXAR PIX DE {{sel.amount}}]</div>
+</div>
+</sc-if>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; gap: 12px; align-items: baseline">
+<div style="font-size: 13px; color: #5B6270">Valor</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600">{{sel.amount}}</div>
+</div>
+<label for="pixcode" style="font-size: 13px; color: #5B6270">Pix copia e cola</label>
+<div style="display: flex; gap: 8px">
+<input id="pixcode" type="text" readonly="readonly" value="{{sel.pixCode}}" style="flex: 1 1 auto; min-width: 0; min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid #C9CCC5; background: #F6F7F4; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #15181D">
+<button type="button" onClick="{{copy}}" style="min-height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid #C9CCC5; background: #FFFFFF; color: #1D4ED8; font-size: 14px; font-weight: 600; cursor: pointer">{{copyLabel}}</button>
+</div>
+<div style="font-size: 13px; color: #5B6270">O valor cai na conta, libera limite e a assinatura é debitada automaticamente no cartão •••• 6218.</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<h3 style="margin: 0; font-size: 15px; font-weight: 700">Alertas programados</h3>
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0">
+<sc-for list="{{sel.alerts}}" as="a" hint-placeholder-count="4">
+<li style="display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #ECEDE8">
+<span style="flex: 0 0 64px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; padding: 3px 0; text-align: center; border-radius: 6px; background: {{a.bg}}; color: {{a.fg}}">{{a.tag}}</span>
+<div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+<div style="font-size: 14px; font-weight: 600">{{a.date}}</div>
+<div style="font-size: 13px; color: #5B6270">{{a.text}}</div>
+</div>
+</li>
+</sc-for>
+</ol>
+</div>
+<button type="button" onClick="{{markPaid}}" style="min-height: 48px; border-radius: 10px; border: 0; background: {{paidBtnBg}}; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">{{paidBtnLabel}}</button>
+</aside>
+
+</div>
+
+<section aria-label="Cartão de pagamento" style="background: #FFFFFF; border: 1px solid #E2E4DE; border-radius: 14px; padding: 22px; display: flex; flex-wrap: wrap; gap: 28px; align-items: center">
+<div style="flex: 0 1 340px; min-width: 260px; aspect-ratio: 1.586; box-sizing: border-box; border-radius: 16px; background: #15181D; color: #FFFFFF; padding: 22px; display: flex; flex-direction: column; justify-content: space-between">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px">
+<div style="font-size: 13px; color: #C9CCC5">Cartão de crédito</div>
+<div style="font-size: 14px; font-weight: 600">Mastercard</div>
+</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 21px; font-weight: 500; letter-spacing: 0.06em">•••• •••• •••• 6218</div>
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 11px; color: #C9CCC5; text-transform: uppercase; letter-spacing: 0.06em">Titular</div>
+<div style="font-size: 14px; font-weight: 600">FELIPE SOUZA ALVES</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px; align-items: flex-end">
+<div style="font-size: 11px; color: #C9CCC5; text-transform: uppercase; letter-spacing: 0.06em">Validade</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600">10/30</div>
+</div>
+</div>
+</div>
+<div style="flex: 999 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 700">Cartão vinculado aos pagamentos</h2>
+<div style="font-size: 14px; color: #5B6270">Todas as assinaturas são cobradas neste cartão. O Pix de cada uma cai na conta vinculada e libera o limite antes da cobrança.</div>
+<div style="display: flex; flex-direction: column">
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #ECEDE8"><span style="font-weight: 600">Claude Code</span><span style="color: #5B6270">todo dia 15</span><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600">R$ 550,00</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #ECEDE8"><span style="font-weight: 600">Render</span><span style="color: #5B6270">todo dia 01</span><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600">R$ 120,00</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #ECEDE8"><span style="font-weight: 600">Google Workspace</span><span style="color: #B42318; font-weight: 600">todo dia 01 · em atraso</span><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600">R$ 279,00</span></div>
+</div>
+<div style="font-size: 13px; color: #5B6270">Por segurança o painel mostra só o final do cartão. Número completo e CVC ficam apenas no app do banco.</div>
+</div>
+</section>
+
+<section aria-label="Como funciona o pagamento" style="background: #FFFFFF; border: 1px solid #E2E4DE; border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 700">Como o pagamento funciona</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: #1D4ED8">01 · Alerta</div>
+<div style="font-weight: 600">Mensagem no WhatsApp e no e-mail</div>
+<div style="font-size: 14px; color: #5B6270">7, 3 e 1 dia antes, no dia e todo dia enquanto estiver em atraso.</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: #1D4ED8">02 · Pix</div>
+<div style="font-weight: 600">Pagar o QR Code da assinatura</div>
+<div style="font-size: 14px; color: #5B6270">Cada assinatura tem o próprio Pix com o valor exato.</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: #1D4ED8">03 · Limite</div>
+<div style="font-weight: 600">O valor libera limite no cartão</div>
+<div style="font-size: 14px; color: #5B6270">O dinheiro fica disponível na conta vinculada ao cartão de crédito.</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: #1D4ED8">04 · Débito</div>
+<div style="font-weight: 600">A assinatura é cobrada no cartão</div>
+<div style="font-size: 14px; color: #5B6270">Claude, Render e Google debitam automaticamente no cartão •••• 6218.</div>
+</div>
+</div>
+</section>
+
+<section aria-label="Canais de alerta" style="background: #FFFFFF; border: 1px solid #E2E4DE; border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 700">Para onde vão os alertas</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="wa" style="font-size: 13px; font-weight: 600">WhatsApp</label>
+<input id="wa" type="tel" value="[SEU NÚMERO COM DDD]" style="min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid #C9CCC5; font-family: inherit; font-size: 14px; color: #15181D; background: #FFFFFF">
+<div style="font-size: 13px; color: #5B6270">Recebe todos os alertas, inclusive os de atraso.</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="em" style="font-size: 13px; font-weight: 600">E-mail</label>
+<input id="em" type="email" value="[E-MAIL PESSOAL]" style="min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid #C9CCC5; font-family: inherit; font-size: 14px; color: #15181D; background: #FFFFFF">
+<div style="font-size: 13px; color: #8A3A06; font-weight: 500">Não use um endereço @geomatchbr.com: se o Google suspender o domínio, o alerta não chega.</div>
+</div>
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { selected: 'google', paid: {}, copied: false };
+  }
+  renderVals() {
+    const sent = { bg: '#E6F4EC', fg: '#1F6F4A' };
+    const next = { bg: '#FEF0E1', fg: '#8A3A06' };
+    const plan = { bg: '#ECEDEA', fg: '#3F4550' };
+    const late = { bg: '#FDECEA', fg: '#B42318' };
+    const base = [
+      {
+        id: 'google', mono: 'G', name: 'Google Workspace', category: 'E-mail e domínio', what: 'geomatchbr.com',
+        amount: 'R$ 279,00', status: 'late', dueLine: 'Vence todo dia 01 · em atraso desde 01/06/2026',
+        risk: 'o e-mail de suporte para de funcionar, os e-mails de recuperação de senha não chegam e as contas ligadas a esse e-mail (lojas de apps, hospedagem) ficam sem como recuperar acesso. Depois de um tempo suspensa, o Google pode excluir a conta e os dados.',
+        alertLine: 'Alerta diário de atraso ativo',
+        qr: '/_blob/a4abd9f544d96d1016ba7c2ca9876774', pixCode: '00020126580014br.gov.bcb.pix0136…',
+        alerts: [
+          Object.assign({ tag: 'ATRASO', date: 'Todo dia, 9h', text: 'WhatsApp + e-mail até o pagamento ser confirmado' }, late),
+          Object.assign({ tag: 'HOJE', date: '28/10 · 9h', text: 'Enviado: "Google em atraso, suporte sem e-mail"' }, sent),
+          Object.assign({ tag: 'DIA', date: '01/11 · 8h', text: 'Vence mais uma mensalidade e o atraso acumula' }, next),
+          Object.assign({ tag: 'AÇÃO', date: 'Após pagar', text: 'Confirmar no Google Admin se o valor cobre todos os meses' }, plan)
+        ]
+      },
+      {
+        id: 'render', mono: 'R', name: 'Render', category: 'Servidor', what: 'backend da GeoMatch',
+        amount: 'R$ 120,00', status: 'soon', dueLine: 'Vence todo dia 01 · próximo 01/11 (em 4 dias)',
+        risk: 'o servidor é suspenso e o app sai do ar: mapa, login, matches e mensagens param para todos os usuários.',
+        alertLine: 'Próximo alerta: amanhã, 29/10 (D-3)',
+        qr: '', pixCode: '[COLE O CÓDIGO PIX DE R$ 120,00]',
+        alerts: [
+          Object.assign({ tag: 'D-7', date: '25/10 · 9h', text: 'Enviado por WhatsApp e e-mail' }, sent),
+          Object.assign({ tag: 'D-3', date: '29/10 · 9h', text: 'WhatsApp + e-mail' }, next),
+          Object.assign({ tag: 'D-1', date: '31/10 · 9h e 18h', text: 'WhatsApp + e-mail, reforço à tarde' }, plan),
+          Object.assign({ tag: 'DIA', date: '01/11 · 8h', text: 'Último aviso antes do servidor parar' }, plan),
+          Object.assign({ tag: 'ATRASO', date: 'A partir de 02/11', text: 'Diário: "GeoMatch fora do ar"' }, late)
+        ]
+      },
+      {
+        id: 'claude', mono: 'C', name: 'Claude Code', category: 'Ferramenta de desenvolvimento', what: 'Anthropic',
+        amount: 'R$ 550,00', status: 'ok', dueLine: 'Vence todo dia 15 · próximo 15/11 (em 18 dias)',
+        risk: 'o plano é interrompido e o Claude Code deixa de funcionar; o desenvolvimento do backend e dos apps iOS e Android fica sem a ferramenta.',
+        alertLine: 'Próximo alerta: 08/11 (D-7)',
+        qr: '/_blob/6ce6fe8d17f58c787375cc53c4ee5cf8', pixCode: '00020126580014br.gov.bcb.pix0136…',
+        alerts: [
+          Object.assign({ tag: 'D-7', date: '08/11 · 9h', text: 'WhatsApp + e-mail' }, plan),
+          Object.assign({ tag: 'D-3', date: '12/11 · 9h', text: 'WhatsApp + e-mail' }, plan),
+          Object.assign({ tag: 'D-1', date: '14/11 · 9h', text: 'WhatsApp + e-mail' }, plan),
+          Object.assign({ tag: 'DIA', date: '15/11 · 8h', text: 'Último aviso' }, plan)
+        ]
+      }
+    ];
+    const statusMap = {
+      late: { label: 'Em atraso', bg: '#FDECEA', fg: '#B42318' },
+      soon: { label: 'Vence em 4 dias', bg: '#FEF0E1', fg: '#8A3A06' },
+      ok: { label: 'Em dia', bg: '#E6F4EC', fg: '#1F6F4A' },
+      unknown: { label: 'Dados pendentes', bg: '#ECEDEA', fg: '#3F4550' },
+      paid: { label: 'Pago', bg: '#E6F4EC', fg: '#1F6F4A' }
+    };
+    const subs = base.map((s) => {
+      const isPaid = !!this.state.paid[s.id];
+      const st = statusMap[isPaid ? 'paid' : s.status];
+      const isSel = this.state.selected === s.id;
+      return Object.assign({}, s, {
+        statusLabel: st.label, pillBg: st.bg, pillFg: st.fg,
+        border: isSel ? '#1D4ED8' : '#E2E4DE',
+        btnBg: isSel ? '#1D4ED8' : '#FFFFFF', btnFg: isSel ? '#FFFFFF' : '#1D4ED8',
+        btnLabel: isSel ? 'Selecionada' : 'Ver Pix e alertas',
+        hasQr: !!s.qr, noQr: !s.qr,
+        pick: () => this.setState({ selected: s.id, copied: false })
+      });
+    });
+    const sel = subs.find((s) => s.id === this.state.selected) || subs[0];
+    const selPaid = !!this.state.paid[sel.id];
+    return {
+      subs, sel,
+      pickGoogle: () => this.setState({ selected: 'google', copied: false }),
+      pickRender: () => this.setState({ selected: 'render', copied: false }),
+      copyLabel: this.state.copied ? 'Copiado' : 'Copiar',
+      copy: () => {
+        try { navigator.clipboard.writeText(sel.pixCode); } catch (e) {}
+        this.setState({ copied: true });
+      },
+      paidBtnLabel: selPaid ? 'Pagamento confirmado' : 'Marcar como pago',
+      paidBtnBg: selPaid ? '#1F6F4A' : '#15181D',
+      markPaid: () => {
+        const paid = Object.assign({}, this.state.paid);
+        paid[sel.id] = !paid[sel.id];
+        this.setState({ paid });
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

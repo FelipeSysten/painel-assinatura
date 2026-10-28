@@ -1,0 +1,17 @@
+{
+  "name": "painel-assinaturas-geomatch",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Painel de assinaturas da GeoMatch com Pix, alertas por WhatsApp e e-mail",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "test": "node --test scripts/core.test.js"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  }
+}

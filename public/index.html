@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>GeoMatch · Painel de assinaturas</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2315181D'/%3E%3Ctext x='16' y='21' font-family='monospace' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EGM%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div id="app" class="wrap"><p class="muted">Carregando…</p></div>
+
+<dialog id="dlg-sub" aria-labelledby="dlg-sub-title">
+  <form method="dialog" id="form-sub" class="dlg">
+    <div class="dlg-head">
+      <h2 id="dlg-sub-title">Nova assinatura</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Fechar">×</button>
+    </div>
+    <div class="grid2">
+      <label class="field">Nome<input name="name" required maxlength="60" placeholder="Ex.: Render"></label>
+      <label class="field">Sigla<input name="mono" maxlength="2" placeholder="R"></label>
+      <label class="field">Categoria<input name="category" maxlength="60" placeholder="Servidor"></label>
+      <label class="field">O que é<input name="what" maxlength="80" placeholder="backend da GeoMatch"></label>
+      <label class="field">Valor mensal (R$)<input name="amount" required inputmode="decimal" placeholder="120,00"></label>
+      <label class="field">Vence todo dia<input name="dueDay" type="number" min="1" max="31" required placeholder="1"></label>
+    </div>
+    <label class="field">Situação atual
+      <select name="paidThrough"></select>
+      <span class="hint">Escolha o último mês já pago. O painel calcula atraso e próximos vencimentos a partir disso.</span>
+    </label>
+    <label class="field">O que acontece se não pagar<textarea name="risk" rows="3" maxlength="500" placeholder="Ex.: o servidor para e o app sai do ar."></textarea></label>
+    <label class="field">Observação (opcional)<input name="note" maxlength="200" placeholder="Ex.: confirmar o total no painel do fornecedor"></label>
+    <div class="field">
+      <span>Pix copia e cola</span>
+      <textarea name="pixCode" rows="3" class="mono" placeholder="00020126…"></textarea>
+      <div class="row-wrap">
+        <label class="btn btn-ghost btn-sm file-btn">Ler QR Code de imagem<input type="file" accept="image/*" data-action="read-qr" hidden></label>
+        <button type="button" class="btn btn-ghost btn-sm" data-action="gen-pix">Gerar com minha chave Pix</button>
+      </div>
+      <span class="hint" id="pix-check"></span>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn btn-danger-ghost" data-action="delete-sub" hidden>Excluir assinatura</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn btn-ghost" data-close>Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-settings" aria-labelledby="dlg-settings-title">
+  <form method="dialog" id="form-settings" class="dlg">
+    <div class="dlg-head">
+      <h2 id="dlg-settings-title">Configurar alertas</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Fechar">×</button>
+    </div>
+    <fieldset>
+      <legend>Quando avisar</legend>
+      <div class="checks">
+        <label><input type="checkbox" name="off7"> 7 dias antes</label>
+        <label><input type="checkbox" name="off3"> 3 dias antes</label>
+        <label><input type="checkbox" name="off1"> 1 dia antes</label>
+        <label><input type="checkbox" name="off0"> No dia</label>
+        <label><input type="checkbox" name="reforcoTarde"> Reforço às 18h no D-1</label>
+        <label><input type="checkbox" name="atrasoDiario"> Todo dia enquanto estiver em atraso</label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Chave Pix para gerar códigos</legend>
+      <div class="grid2">
+        <label class="field">Chave<input name="pixKey" maxlength="77"></label>
+        <label class="field">Nome do recebedor<input name="pixName" maxlength="25"></label>
+        <label class="field">Cidade<input name="pixCity" maxlength="15"></label>
+        <label class="field">CEP<input name="pixCep" maxlength="9"></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Cartão vinculado</legend>
+      <div class="grid2">
+        <label class="field">Bandeira<input name="cardBrand" maxlength="20"></label>
+        <label class="field">Final<input name="cardLast4" maxlength="4" inputmode="numeric" pattern="\d{4}"></label>
+        <label class="field">Titular<input name="cardHolder" maxlength="40"></label>
+        <label class="field">Validade<input name="cardExp" maxlength="5" placeholder="MM/AA"></label>
+      </div>
+      <span class="hint">Só o final do cartão. Número completo e CVC ficam apenas no app do banco.</span>
+    </fieldset>
+    <div class="dlg-foot">
+      <span class="spacer"></span>
+      <button type="button" class="btn btn-ghost" data-close>Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="/app.js"></script>
+</body>
+</html>
