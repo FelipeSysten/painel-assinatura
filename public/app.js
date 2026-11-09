@@ -297,6 +297,7 @@ function sidePanel(sub, t) {
         <button type="button" class="btn btn-ghost" data-action="copy" ${sub.pixCode ? '' : 'disabled'}>${ui.copied ? 'Copiado' : 'Copiar'}</button>
       </div>
       ${issues.map((i) => `<div class="warn">${esc(i)}</div>`).join('')}
+      ${sub.pixCode && parsePix(sub.pixCode).valid && parsePix(sub.pixCode).amount == null ? `<div class="small"><b>Pix sem valor fixo:</b> digite ${fmtBRL(a.toPay)} no app do banco ao pagar.</div>` : ''}
       ${sub.pixKeep && sub.pixCode && parsePix(sub.pixCode).amount != null && parsePix(sub.pixCode).amount !== a.toPay ? `<div class="small muted">QR Code de ${fmtBRL(parsePix(sub.pixCode).amount)}, mantido por escolha sua.</div>` : ''}
       ${issues.length && ui.data.settings.pix?.key ? `<button type="button" class="btn btn-sm btn-outline" data-action="regen-pix">Gerar Pix de ${fmtBRL(a.toPay)} com minha chave</button>` : ''}
       <div class="small muted">O valor cai na conta, libera limite e a assinatura é debitada automaticamente no cartão •••• ${esc(ui.data.settings.card?.last4 || '----')}.</div>
@@ -446,12 +447,25 @@ function openSubForm(sub) {
   f.dueDay.value = sub?.dueDay || '';
   f.risk.value = sub?.risk || '';
   f.note.value = sub?.note || '';
-  f.overdueOverride.value = sub?.overdueOverride != null ? (sub.overdueOverride / 100).toFixed(2).replace('.', ',') : '';
+  // mostra o total atual (valor informado + mensalidades que venceram depois)
+  const cur = sub ? analyze(sub, today()) : null;
+  f.overdueOverride.value = cur?.overdueManual ? (cur.overdue / 100).toFixed(2).replace('.', ',') : '';
   f.pixCode.value = sub?.pixCode || '';
   f.paidThrough.innerHTML = paidThroughOptions(dueDay, sub?.paidThrough || defaultPaidThrough(dueDay));
   $('[data-action="delete-sub"]', formSub).hidden = !sub;
   checkPixField();
   dlgSub.showModal();
+}
+
+// O valor em atraso informado vale para as mensalidades já vencidas hoje; as próximas são somadas sozinhas.
+function overdueFields(prev, fields, informed) {
+  if (informed === null) return { overdueOverride: null, overdueOverrideThrough: null };
+  const a = analyze({ ...prev, ...fields, overdueOverride: null }, today());
+  if (a.state !== 'late') return { overdueOverride: null, overdueOverrideThrough: null };
+  const unchanged = prev && prev.overdueOverride != null && prev.paidThrough === fields.paidThrough && prev.dueDay === fields.dueDay
+    && prev.amount === fields.amount && analyze(prev, today()).overdue === informed;
+  if (unchanged) return { overdueOverride: prev.overdueOverride, overdueOverrideThrough: prev.overdueOverrideThrough ?? null };
+  return { overdueOverride: informed, overdueOverrideThrough: a.payThrough };
 }
 
 function checkPixField() {
@@ -484,13 +498,14 @@ formSub.addEventListener('submit', (e) => {
   const dueDay = Number(f.dueDay.value);
   if (!(amount > 0)) return toast('Informe um valor válido, ex.: 120,00');
   if (!(dueDay >= 1 && dueDay <= 31)) return toast('O dia de vencimento vai de 1 a 31.');
-  const overdueOverride = f.overdueOverride.value.trim() ? parseBRL(f.overdueOverride.value) : null;
-  if (overdueOverride !== null && !(overdueOverride > 0)) return toast('Valor em atraso inválido, ex.: 280,00');
+  const informed = f.overdueOverride.value.trim() ? parseBRL(f.overdueOverride.value) : null;
+  if (informed !== null && !(informed > 0)) return toast('Valor em atraso inválido, ex.: 280,00');
   const name = f.name.value.trim();
   const fields = {
     name, mono: (f.mono.value.trim() || name[0] || '?').toUpperCase(), category: f.category.value.trim(), what: f.what.value.trim(),
-    amount, dueDay, paidThrough: f.paidThrough.value, risk: f.risk.value.trim(), note: f.note.value.trim(), pixCode: f.pixCode.value.trim(), overdueOverride
+    amount, dueDay, paidThrough: f.paidThrough.value, risk: f.risk.value.trim(), note: f.note.value.trim(), pixCode: f.pixCode.value.trim()
   };
+  Object.assign(fields, overdueFields(ui.data.subs.find((s) => s.id === ui.editing), fields, informed));
   const subs = ui.data.subs;
   let next;
   if (ui.editing) {

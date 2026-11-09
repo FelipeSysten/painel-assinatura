@@ -53,5 +53,5 @@ Para testar o envio local, defina as variáveis `SMTP_*` antes do `npm run dev`.
 
 ## Observações
 
-- O Pix do **Render** foi gerado pelo painel com a mesma chave Pix dos QR Codes do Google e do Claude (recebedor "57.894.816 FELIPE DE SOUZ", Itabuna). Confira o recebedor no app do banco antes do primeiro pagamento.
-- O atraso do Google está como R$ 280,00 pelas 5 mensalidades (jun a out/2026), no campo "Valor em atraso informado". O Pix usado é o QR Code original do Google (R$ 279,00), mantido por escolha.
+- As três assinaturas usam o mesmo QR Code Pix ("Meu QR Pix" do banco, chave aleatória, recebedor 57.894.816 FELIPE DE SOUZA ALVES). Ele **não tem valor fixo**: o painel e o e-mail mostram o valor a digitar ao pagar. Dados já salvos com os QR Codes antigos são trocados por esse automaticamente ao abrir o painel.
+- O atraso do Google está como **R$ 345,54**, o saldo total que o Google Admin mostrava em 09/11/2026 (R$ 298,50 atrasados da fatura de outubro + uso de 1 a 9/nov). Ele vale até nov/2026; a partir de dezembro cada mensalidade não paga é somada automaticamente.

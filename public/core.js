@@ -80,16 +80,21 @@ export function analyze(sub, today) {
       c = addMonths(c, 1);
     }
     const upcomingDue = dueDate(c, sub.dueDay);
+    // overdueOverride: total informado pelo fornecedor, válido para as mensalidades até overdueOverrideThrough.
+    // Cada mensalidade que vence depois disso é somada automaticamente.
+    const manual = sub.overdueOverride != null;
+    const extraCycles = manual && sub.overdueOverrideThrough ? openCycles.filter((x) => x > sub.overdueOverrideThrough) : [];
+    const overdue = manual ? sub.overdueOverride + extraCycles.length * sub.amount : openCycles.length * sub.amount;
     return {
       state: 'late', cycle: next, due, lateDays: -diff, openCycles,
-      // overdueOverride: total informado pelo fornecedor, quando difere da soma das mensalidades
-      overdue: sub.overdueOverride ?? openCycles.length * sub.amount, overdueManual: sub.overdueOverride != null,
-      toPay: sub.overdueOverride ?? openCycles.length * sub.amount, payThrough: openCycles[openCycles.length - 1],
+      overdue, overdueManual: manual, overdueBase: sub.overdueOverride, overdueBaseThrough: sub.overdueOverrideThrough || null,
+      extraCycles, extraAmount: extraCycles.length * sub.amount,
+      toPay: overdue, payThrough: openCycles[openCycles.length - 1],
       upcomingCycle: c, upcomingDue, daysToUpcoming: daysBetween(today, upcomingDue)
     };
   }
   return {
-    state: diff <= 7 ? 'soon' : 'ok', cycle: next, due, diff, openCycles: [], overdue: 0, overdueManual: false, toPay: sub.amount, payThrough: next,
+    state: diff <= 7 ? 'soon' : 'ok', cycle: next, due, diff, openCycles: [], overdue: 0, overdueManual: false, extraCycles: [], extraAmount: 0, toPay: sub.amount, payThrough: next,
     upcomingCycle: next, upcomingDue: due, daysToUpcoming: diff
   };
 }
@@ -155,10 +160,10 @@ export function applyPayment(state, subId, today, source = 'painel') {
   const sub = state.subs.find((s) => s.id === subId);
   if (!sub) return state;
   const a = analyze(sub, today);
-  const entry = { subId, from: sub.paidThrough, fromOverride: sub.overdueOverride ?? null, to: a.payThrough, at: new Date().toISOString(), source, amount: a.toPay };
+  const entry = { subId, from: sub.paidThrough, fromOverride: sub.overdueOverride ?? null, fromOverrideThrough: sub.overdueOverrideThrough ?? null, to: a.payThrough, at: new Date().toISOString(), source, amount: a.toPay };
   return {
     ...state,
-    subs: state.subs.map((s) => (s.id === subId ? { ...s, paidThrough: a.payThrough, overdueOverride: null } : s)),
+    subs: state.subs.map((s) => (s.id === subId ? { ...s, paidThrough: a.payThrough, overdueOverride: null, overdueOverrideThrough: null } : s)),
     history: [entry, ...(state.history || [])].slice(0, 200)
   };
 }
@@ -172,7 +177,7 @@ export function undoPayment(state, subId) {
   if (!h) return state;
   const history = [...state.history];
   history.splice(history.indexOf(h), 1);
-  return { ...state, subs: state.subs.map((s) => (s.id === subId ? { ...s, paidThrough: h.from, overdueOverride: h.fromOverride ?? null } : s)), history };
+  return { ...state, subs: state.subs.map((s) => (s.id === subId ? { ...s, paidThrough: h.from, overdueOverride: h.fromOverride ?? null, overdueOverrideThrough: h.fromOverrideThrough ?? null } : s)), history };
 }
 
 // ---------- agenda de alertas ----------
@@ -222,9 +227,10 @@ export function alertsDueNow(state, today, slot) {
 export function overdueNote(a) {
   const n = a.openCycles.length;
   const months = `${n} mensalidade${n === 1 ? '' : 's'} em aberto (${a.openCycles.map(fmtCycle).join(', ')})`;
-  return a.overdueManual
-    ? `${months} · valor informado pelo fornecedor: ${fmtBRL(a.overdue)}.`
-    : `${months} · total estimado ${fmtBRL(a.overdue)}. Confirme o valor no painel do fornecedor.`;
+  if (!a.overdueManual) return `${months} · total estimado ${fmtBRL(a.overdue)}. Confirme o valor no painel do fornecedor.`;
+  const base = `valor informado pelo fornecedor: ${fmtBRL(a.overdueBase)}${a.overdueBaseThrough ? ` (até ${fmtCycle(a.overdueBaseThrough)})` : ''}`;
+  if (!a.extraCycles.length) return `${months} · ${base}.`;
+  return `${months} · ${base} + ${a.extraCycles.map(fmtCycle).join(', ')} (${fmtBRL(a.extraAmount)}) = ${fmtBRL(a.overdue)}.`;
 }
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -244,13 +250,14 @@ export function buildMessage(sub, today, ctx = {}) {
   const lead = late ? `${label} está sem pagamento desde ${fmtCycle(a.cycle)}.` : `${label} vence dia ${fmtDate(a.due)}.`;
   const cardLine = card.last4 ? ` no cartão •••• ${card.last4}` : ' no cartão';
   const pixLine = sub.pixCode ? sub.pixCode : '[cadastre o Pix desta assinatura no painel]';
+  const openAmount = !!sub.pixCode && parsePix(sub.pixCode).amount == null;
 
   // versão em texto puro do e-mail (para clientes que não mostram HTML)
   const lines = [title, lead];
   if (sub.risk) lines.push(`${late ? 'Impacto' : 'Se não pagar'}: ${sub.risk}`);
   lines.push(`Valor: ${amountLabel}`);
   if (!late) lines.push(`Pague o Pix para liberar o limite${cardLine}.`);
-  lines.push('', 'Pix copia e cola:', pixLine);
+  lines.push('', openAmount ? `Pix copia e cola (digite ${fmtBRL(a.toPay)} ao pagar):` : 'Pix copia e cola:', pixLine);
   if (panelUrl) lines.push('', `Abrir no painel: ${panelUrl}`);
   const text = lines.join('\n');
 
@@ -272,7 +279,7 @@ ${late && (a.openCycles.length > 1 || a.overdueManual) ? `<p style="margin:16px 
 ${sub.risk ? `<p style="margin:16px 0"><b>${late ? 'Impacto' : 'O que acontece se não pagar'}:</b> ${esc(sub.risk)}</p>` : '<div style="height:16px"></div>'}
 <div style="font-size:13px;color:#5B6270">Como pagar</div>
 <ol style="margin:4px 0 16px;padding-left:20px">
-<li>Pague o Pix abaixo na conta vinculada ao cartão.</li>
+<li>Pague o Pix abaixo na conta vinculada ao cartão${openAmount ? ` digitando o valor <b>${fmtBRL(a.toPay)}</b>` : ''}.</li>
 <li>O valor libera limite no cartão de crédito.</li>
 <li>${esc(sub.name)} debita a assinatura automaticamente${esc(cardLine)}.</li>
 </ol>
